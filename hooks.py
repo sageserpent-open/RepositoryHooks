@@ -11,8 +11,12 @@ import os.path
 def isThirdPartyFile(fileContext):
 	return re.search(r"/thirdParty/", fileContext.path(), re.IGNORECASE)
 
+sufficesForFileTypesThatRequireLeadingTabs = ["py"]
+
+disgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet = r"^{0}$".format("|".join(map(lambda (suffix): re.escape(".{0}".format(suffix)), sufficesForFileTypesThatRequireLeadingTabs)))
+
 def isFileThatRequiresLeadingTabs(fileContext):
-	return re.match(r"^\.py$", os.path.splitext(fileContext.path())[1], re.IGNORECASE)
+	return re.match(disgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet, os.path.splitext(fileContext.path())[1], re.IGNORECASE)
 
 def linesContainingLeadingTabs(fileContext):
 	return [] if isFileThatRequiresLeadingTabs(fileContext) else filter(lambda ((lineNumber, line)): re.search(r"^\t+", line), zip(itertools.count(1), fileContext.data().splitlines()))
