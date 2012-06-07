@@ -40,14 +40,14 @@ As an example, I work with a shell repository like this:-
 					
 I have an '.hgsub' file like this:-
 
-repositoryhooks = git+ssh://git@github.com:sageserpent-open/RepositoryHooks.git
-ntestcasebuilder = git+ssh://git@github.com:sageserpent-open/NTestCaseBuilder.git
+	repositoryhooks = git+ssh://git@github.com:sageserpent-open/RepositoryHooks.git
+	ntestcasebuilder = git+ssh://git@github.com:sageserpent-open/NTestCaseBuilder.git
 
 My hgrc file *within 'NTestCaseBuilder'* has an entry like this:-
 
 
-[hooks]
-pretxncommit = python:../RepositoryHooks/hooks.py:preTxnCommitHook
+	[hooks]
+	pretxncommit = python:../RepositoryHooks/hooks.py:preTxnCommitHook
 			
 **NOTE:** the use of the relative path to step up and across into the sibling 'RepositoryHooks' subrepository.
 
