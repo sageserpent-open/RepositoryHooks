@@ -17,12 +17,18 @@ disgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAn
 
 def isFileThatRequiresLeadingTabs(fileContext):
 	return re.match(disgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet, os.path.splitext(fileContext.path())[1], re.IGNORECASE)
+	
+def linesMatchingRegularExpression(fileContext, regularExpression):
+	return filter(lambda ((lineNumber, line)): re.search(regularExpression, line), zip(itertools.count(1), fileContext.data().splitlines()))
 
 def linesContainingLeadingTabs(fileContext):
-	return [] if isFileThatRequiresLeadingTabs(fileContext) else filter(lambda ((lineNumber, line)): re.search(r"^\t+", line), zip(itertools.count(1), fileContext.data().splitlines()))
+	return [] if isFileThatRequiresLeadingTabs(fileContext) else linesMatchingRegularExpression(fileContext, r"^\s*\t\s*\S")
 
 def linesContainingTrailingWhitespace(fileContext):
-	return filter(lambda ((lineNumber, line)): re.search(r"\s+$", line), zip(itertools.count(1), fileContext.data().splitlines()))
+	return linesMatchingRegularExpression(fileContext, r"\S\s+$")
+	
+def whitespaceOnlyLines(fileContext):
+	return linesMatchingRegularExpression(fileContext, r"^\s+$")
 
 def preTxnCommitHook(ui, repo, **kwargs):
 	"""
@@ -39,8 +45,9 @@ def preTxnCommitHook(ui, repo, **kwargs):
 
 	fileContextsContainingLeadingTabs = list(itertools.ifilter(linesContainingLeadingTabs, relevantFileContexts))
 	fileContextsContainingTrailingWhitespace = list(itertools.ifilter(linesContainingTrailingWhitespace, relevantFileContexts))
+	fileContextsContainingWhitespaceOnlyLines = list(itertools.ifilter(whitespaceOnlyLines, relevantFileContexts))
 
-	if fileContextsContainingLeadingTabs or fileContextsContainingTrailingWhitespace:
+	if fileContextsContainingLeadingTabs or fileContextsContainingTrailingWhitespace or fileContextsContainingWhitespaceOnlyLines:
 		if fileContextsContainingLeadingTabs:
 			ui.warn("Files found containing leading tabs...\n\n")
 			for fileContext in fileContextsContainingLeadingTabs:
@@ -56,6 +63,16 @@ def preTxnCommitHook(ui, repo, **kwargs):
 			for fileContext in fileContextsContainingTrailingWhitespace:
 				ui.warn("\t{0}\n".format(fileContext.path()))
 				for lineNumber, line in linesContainingTrailingWhitespace(fileContext):
+					ui.warn("\tLine #{0}:{1}\n".format(lineNumber, line))
+
+		if (fileContextsContainingLeadingTabs or fileContextsContainingTrailingWhitespace) and fileContextsContainingWhitespaceOnlyLines:
+			ui.warn("\n")
+
+		if fileContextsContainingWhitespaceOnlyLines:
+			ui.warn("Files found containing whitespace-only lines...\n\n")
+			for fileContext in fileContextsContainingWhitespaceOnlyLines:
+				ui.warn("\t{0}\n".format(fileContext.path()))
+				for lineNumber, line in whitespaceOnlyLines(fileContext):
 					ui.warn("\tLine #{0}:{1}\n".format(lineNumber, line))
 
 		return True
