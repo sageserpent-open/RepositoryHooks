@@ -37,9 +37,11 @@ def preTxnCommitHook(ui, repo, **kwargs):
 	pretxncommit = python:<relative directory path from repository root to this file you are reading>/hooks.py:preTxnCommitHook
 	"""
 	changeContext = repo[None]
+	
+	filesExistingInThisCommit = set([fileName for fileName in changeContext])
 
-	fileContexts = [changeContext[fileName] for fileName in changeContext.files()]	# NOTE: use 'changeContext.files()' rather than 'changeContext' - we only want the files changed
-																					# in the commit itself. It would not be fair to punish the latest committer for the sins of previous ones!
+	fileContexts = [changeContext[fileName] for fileName in changeContext.files() if fileName in filesExistingInThisCommit]	# NOTE: use 'changeContext.files()' rather than 'changeContext' - we only want the files changed
+																															# in the commit itself. It would not be fair to punish the latest committer for the sins of previous ones!
 
 	relevantFileContexts = list(itertools.ifilterfalse(isThirdPartyFile, fileContexts))
 
