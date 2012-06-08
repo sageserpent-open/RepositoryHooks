@@ -9,7 +9,7 @@ I probably will port these to side-by-side Git hooks as well, please be patient 
 
 The idea is for this repository to be shared as a subrepository / submodule, depending on whether you use Mercurial or Git. That way you can have a localised set of hooks for your own repository but share changes to the hooks with everyone else, as well as re-use the hooks across several projects.
 
-Note that just setting up a subreposity / submodule is not enough - you still have to tweak your local configuration to enable the hooks.
+Note that just setting up a subrepository / submodule is not enough - you still have to tweak your local configuration to enable the hooks.
 
 This is probably a good thing, because most people don't want these hooks to be enabled by default.
 
