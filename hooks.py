@@ -17,7 +17,7 @@ disgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAn
 
 def isFileThatRequiresLeadingTabs(fileContext):
 	return re.match(disgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet, os.path.splitext(fileContext.path())[1], re.IGNORECASE)
-	
+
 def linesMatchingRegularExpression(fileContext, regularExpression):
 	return filter(lambda ((lineNumber, line)): re.search(regularExpression, line), zip(itertools.count(1), fileContext.data().splitlines()))
 
@@ -26,7 +26,7 @@ def linesContainingLeadingTabs(fileContext):
 
 def linesContainingTrailingWhitespace(fileContext):
 	return linesMatchingRegularExpression(fileContext, r"\S\s+$")
-	
+
 def whitespaceOnlyLines(fileContext):
 	return linesMatchingRegularExpression(fileContext, r"^\s+$")
 
@@ -37,7 +37,7 @@ def preTxnCommitHook(ui, repo, **kwargs):
 	pretxncommit = python:<relative directory path from repository root to this file you are reading>/hooks.py:preTxnCommitHook
 	"""
 	changeContext = repo[None]
-	
+
 	filesExistingInThisCommit = set([fileName for fileName in changeContext])
 
 	fileContexts = [changeContext[fileName] for fileName in changeContext.files() if fileName in filesExistingInThisCommit]	# NOTE: use 'changeContext.files()' rather than 'changeContext' - we only want the files changed
