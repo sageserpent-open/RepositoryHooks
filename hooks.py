@@ -1,8 +1,17 @@
-# Hooks for Mercurial repositories.
-# This is distributed by bundling it into its own repository, which is in turn added as a subrepository into whatever repository wants to use the hook.
-# The parent repository's ./hg/hgrc file can then refer to this hook at a location relative to the root of the parent repository. This allows a shared,
-# version-controlled set of hooks to be set up in one place; clones of the parent repositories automatically pick up a reference to the shared repository.
-# It is up to the cloned repository's owner to then enable the hook in their own ./hg/hgrc file, so the model is voluntary buy-in rather than enforced policy.
+# Hooks file for Mercurial repositories.
+# This is distributed by bundling it into its own repository; if you want to use it, make a shell repository that contains whatever
+# code you are working on as a subrepository, then clone this hooks repository into the shell as a sibling of your own code's subrepository.
+
+# Your code's subrepository's ./hg/hgrc file can then refer to this hook at a location relative to its root - because it is a sibling,
+# this will look something like '../RepositoryHooks/hooks.py'. Remember, the ./hg/hgrc file to configure is the one in your own code's
+# subrepository, *not* the one in the shell repository nor one in the sibling hooks subrepository.
+
+# This allows a shared, version-controlled set of hooks to be set up in one place; clones of the shell repository automatically pick up a
+# reference to the shared repository. It is up to the cloned repository's owner to then enable the hook in their own ./hg/hgrc file, so
+# the model is voluntary buy-in rather than enforced policy.
+
+# NOTE: you can also directly embed a clone of this hooks repository as a subrepository within your own code's repository - thereby
+# avoiding the use of a shell repository. Again, configure the ./hg/hgrc file in your code's repository.
 
 import re
 import itertools
