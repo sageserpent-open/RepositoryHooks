@@ -39,13 +39,15 @@ def linesContainingTrailingWhitespace(fileContext):
 def whitespaceOnlyLines(fileContext):
 	return linesMatchingRegularExpression(fileContext, r"^\s+$")
 
-def preTxnCommitHook(ui, repo, **kwargs):
+def preTxnCommitHook(ui, repo, node, **kwargs):
 	"""
 	In .hg/hgrc, place:
 	[hooks]
 	pretxncommit = python:<relative directory path from repository root to this file you are reading>/hooks.py:preTxnCommitHook
 	"""
-	changeContext = repo[None]
+	changeContext = repo[node]	# NOTE: don't use 'None' instead of 'node' - this will give us the change context for the working directory,
+								# which may be a superset of the changed files in the commit, i.e. some of the file changes were left out
+								# of the commit by the user.
 
 	filesExistingInThisCommit = set([fileName for fileName in changeContext])
 
@@ -62,7 +64,7 @@ def preTxnCommitHook(ui, repo, **kwargs):
 		if fileContextsContainingLeadingTabs:
 			ui.warn("Files found containing leading tabs...\n\n")
 			for fileContext in fileContextsContainingLeadingTabs:
-				ui.warn("\t{0}\n".format(fileContext.path()))
+				ui.warn("\t{0}\n\n".format(fileContext.path()))
 				for lineNumber, line in linesContainingLeadingTabs(fileContext):
 					ui.warn("\tLine #{0}:{1}\n".format(lineNumber, line))
 
@@ -72,7 +74,7 @@ def preTxnCommitHook(ui, repo, **kwargs):
 		if fileContextsContainingTrailingWhitespace:
 			ui.warn("Files found containing trailing whitespace...\n\n")
 			for fileContext in fileContextsContainingTrailingWhitespace:
-				ui.warn("\t{0}\n".format(fileContext.path()))
+				ui.warn("\t{0}\n\n".format(fileContext.path()))
 				for lineNumber, line in linesContainingTrailingWhitespace(fileContext):
 					ui.warn("\tLine #{0}:{1}\n".format(lineNumber, line))
 
@@ -82,7 +84,7 @@ def preTxnCommitHook(ui, repo, **kwargs):
 		if fileContextsContainingWhitespaceOnlyLines:
 			ui.warn("Files found containing whitespace-only lines...\n\n")
 			for fileContext in fileContextsContainingWhitespaceOnlyLines:
-				ui.warn("\t{0}\n".format(fileContext.path()))
+				ui.warn("\t{0}\n\n".format(fileContext.path()))
 				for lineNumber, line in whitespaceOnlyLines(fileContext):
 					ui.warn("\tLine #{0}:{1}\n".format(lineNumber, line))
 
