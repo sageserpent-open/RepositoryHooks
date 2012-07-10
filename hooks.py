@@ -20,7 +20,7 @@ import os.path
 def isThirdPartyFile(fileContext):
 	return re.search(r"/thirdParty/", fileContext.path(), re.IGNORECASE)
 
-sufficesForFileTypesThatRequireLeadingTabs = ["sln", "py", "markdown", "md"]
+sufficesForFileTypesThatRequireLeadingTabs = ["fsproj", "csproj", "sln", "py", "markdown", "md"]
 
 disgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet = r"^{0}$".format("|".join(map(lambda (suffix): re.escape(".{0}".format(suffix)), sufficesForFileTypesThatRequireLeadingTabs)))
 
