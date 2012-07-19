@@ -16,16 +16,34 @@
 import re
 import itertools
 import os.path
+import mimetypes
+
+def isBinaryFile(fileContext):
+	return mimetypes.guess_type(fileContext.path())[0]	# A lousy, but effective test: if the Mime type isn't defined, it's *probably* a text file.
+														# Let's see how well this works out in practice...
 
 def isThirdPartyFile(fileContext):
 	return re.search(r"/thirdParty/", fileContext.path(), re.IGNORECASE)
+	
+sufficesForFileTypesThatRequireLeadingTabs = ["py", "markdown", "md"]
 
-sufficesForFileTypesThatRequireLeadingTabs = ["fsproj", "csproj", "sln", "py", "markdown", "md"]
+sufficesForFileTypesThatAreAutomaticallyFilledWithWhitespaceMessByTools = ["targets", "sln", "fsproj", "csproj"]
 
-disgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet = r"^{0}$".format("|".join(map(lambda (suffix): re.escape(".{0}".format(suffix)), sufficesForFileTypesThatRequireLeadingTabs)))
+def createDisgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet(suffices):
+	return r"^{0}$".format("|".join(map(lambda (suffix): re.escape(".{0}".format(suffix)), suffices)))
+	
+regularExpressionForFileTypesThatRequireLeadingTabs = createDisgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet(sufficesForFileTypesThatRequireLeadingTabs)
+
+regularExpressionForFileTypesThatAreAutomaticallyFilledWithWhitespaceMessByTools = createDisgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet(sufficesForFileTypesThatAreAutomaticallyFilledWithWhitespaceMessByTools)
+
+def isFileOfOneOfASetOfTypes(fileContext, regularExpressionForFileTypes):
+	return re.match(regularExpressionForFileTypes, os.path.splitext(fileContext.path())[1], re.IGNORECASE)
 
 def isFileThatRequiresLeadingTabs(fileContext):
-	return re.match(disgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet, os.path.splitext(fileContext.path())[1], re.IGNORECASE)
+	return isFileOfOneOfASetOfTypes(fileContext, regularExpressionForFileTypesThatRequireLeadingTabs)
+	
+def isFileThatWillBeMessedUpByATool(fileContext):
+	return isFileOfOneOfASetOfTypes(fileContext, regularExpressionForFileTypesThatAreAutomaticallyFilledWithWhitespaceMessByTools)
 
 def linesMatchingRegularExpression(fileContext, regularExpression):
 	return filter(lambda ((lineNumber, line)): re.search(regularExpression, line), zip(itertools.count(1), fileContext.data().splitlines()))
@@ -52,10 +70,10 @@ def preTxnCommitHook(ui, repo, node, **kwargs):
 	filesExistingInThisCommit = set([fileName for fileName in changeContext])
 
 	fileContexts = [changeContext[fileName] for fileName in changeContext.files() if fileName in filesExistingInThisCommit]	# NOTE: use 'changeContext.files()' rather than 'changeContext' - we only want the files changed
-																															# in the commit itself. It would not be fair to punish the latest committer for the sins of previous ones!
+																															# in the commit itself. It would not be fair to punish the latest committer for the sins of previous ones!																															
 
-	relevantFileContexts = list(itertools.ifilterfalse(isThirdPartyFile, fileContexts))
-
+	relevantFileContexts = [fileContext for fileContext in fileContexts if not (isThirdPartyFile(fileContext) or isBinaryFile(fileContext) or isFileThatWillBeMessedUpByATool(fileContext))]
+	
 	fileContextsContainingLeadingTabs = list(itertools.ifilter(linesContainingLeadingTabs, relevantFileContexts))
 	fileContextsContainingTrailingWhitespace = list(itertools.ifilter(linesContainingTrailingWhitespace, relevantFileContexts))
 	fileContextsContainingWhitespaceOnlyLines = list(itertools.ifilter(whitespaceOnlyLines, relevantFileContexts))
