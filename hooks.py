@@ -18,10 +18,6 @@ import itertools
 import os.path
 import mimetypes
 
-def isBinaryFile(fileContext):
-	return mimetypes.guess_type(fileContext.path())[0]	# A lousy, but effective test: if the Mime type isn't defined, it's *probably* a text file.
-														# Let's see how well this works out in practice...
-
 def isThirdPartyFile(fileContext):
 	return re.search(r"/thirdParty/", fileContext.path(), re.IGNORECASE)
 	
@@ -29,12 +25,16 @@ sufficesForFileTypesThatRequireLeadingTabs = ["py", "markdown", "md"]
 
 sufficesForFileTypesThatAreAutomaticallyFilledWithWhitespaceMessByTools = ["targets", "sln", "fsproj", "csproj"]
 
+sufficesForFileTypesThatAreKnownToBeBinaryButNotDetectedViaMimeTypes = ["nupkg"]
+
 def createDisgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet(suffices):
 	return r"^{0}$".format("|".join(map(lambda (suffix): re.escape(".{0}".format(suffix)), suffices)))
 	
 regularExpressionForFileTypesThatRequireLeadingTabs = createDisgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet(sufficesForFileTypesThatRequireLeadingTabs)
 
 regularExpressionForFileTypesThatAreAutomaticallyFilledWithWhitespaceMessByTools = createDisgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet(sufficesForFileTypesThatAreAutomaticallyFilledWithWhitespaceMessByTools)
+
+regularExpressionForFileTypesThatAreKnownToBeBinaryButNotDetectedViaMimeTypes = createDisgustingRegularExpressionHackToWorkaroundNotBeingAbleToSupplyExternalHashingAndComparisonToPythonSet(sufficesForFileTypesThatAreKnownToBeBinaryButNotDetectedViaMimeTypes)
 
 def isFileOfOneOfASetOfTypes(fileContext, regularExpressionForFileTypes):
 	return re.match(regularExpressionForFileTypes, os.path.splitext(fileContext.path())[1], re.IGNORECASE)
@@ -44,6 +44,13 @@ def isFileThatRequiresLeadingTabs(fileContext):
 	
 def isFileThatWillBeMessedUpByATool(fileContext):
 	return isFileOfOneOfASetOfTypes(fileContext, regularExpressionForFileTypesThatAreAutomaticallyFilledWithWhitespaceMessByTools)
+	
+def isKnownBinaryFile(fileContext):
+	return isFileOfOneOfASetOfTypes(fileContext, regularExpressionForFileTypesThatAreKnownToBeBinaryButNotDetectedViaMimeTypes)
+
+def isBinaryFile(fileContext):
+	return isKnownBinaryFile(fileContext) or mimetypes.guess_type(fileContext.path())[0]	# A lousy, but effective test: if the Mime type isn't defined, it's *probably* a text file.
+																							# Let's see how well this works out in practice...
 
 def linesMatchingRegularExpression(fileContext, regularExpression):
 	return filter(lambda ((lineNumber, line)): re.search(regularExpression, line), zip(itertools.count(1), fileContext.data().splitlines()))
